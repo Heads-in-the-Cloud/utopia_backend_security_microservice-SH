@@ -1,4 +1,4 @@
-FROM public.ecr.aws/b9s2q8s8/utopia_backend_base_image
+FROM 026390315914.dkr.ecr.us-west-2.amazonaws.com/utopia_backend_base_image-sh
 
 # Changing working directory to the system user's home repository
 WORKDIR /home/utopian/app
