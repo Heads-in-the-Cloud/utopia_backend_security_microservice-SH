@@ -19,4 +19,4 @@ USER utopian
 EXPOSE 5000
 
 # Setting the entry_script as the images entrypoint
-ENTRYPOINT ["./entry_script.sh"]
+ENTRYPOINT ["/home/utopian/app/entry_script.sh"]

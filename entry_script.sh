@@ -35,7 +35,7 @@ else
   echo "with --build-arg VARIABLE='value' or VARIABLE_FILE=/path/to/file'"
 fi
 
-source venv/bin/activate
+source /home/utopian/venv/bin/activate
 # flask db upgrade
 
 exec flask run
