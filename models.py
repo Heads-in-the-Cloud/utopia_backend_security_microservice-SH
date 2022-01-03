@@ -23,7 +23,7 @@ db = SQLAlchemy()
 class User(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    role_id = db.Column(db.Integer, db.ForeignKey("role_id.id"), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey("user_role.id"), nullable=False)
     given_name = db.Column(db.String, nullable=False)
     family_name = db.Column(db.String, nullable=False)
     username = db.Column(db.String, nullable=False)
@@ -31,25 +31,25 @@ class User(db.Model):
     email = db.Column(db.String, nullable=False)
     phone = db.Column(db.String)
 
-    def __init__(self, given_name, family_name, email, username, password, role_id=1, phone=""):
-        self.role_id = role_id
-        self.given_name = given_name
-        self.family_name = family_name
-        self.email = email
-        self.username = username
-        self.password = flask_bcrypt.generate_password_hash(password).decode()
-        self.phone = phone
+    # def __init__(self, given_name, family_name, email, username, password, role_id=1, phone=""):
+    #     self.role_id = role_id
+    #     self.given_name = given_name
+    #     self.family_name = family_name
+    #     self.email = email
+    #     self.username = username
+    #     self.password = flask_bcrypt.generate_password_hash(password).decode()
+    #     self.phone = phone
 
     @staticmethod
     def encode_auth_token(self, user_id):
         """
         Generates a JWT authorization token
         :param user_id: the ID of the user attempting to log in
-        :return: string
+        :return: stringified token
         """
         try:
             payload = {
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5),
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=8),
                 'iat': datetime.datetime.utcnow(),
                 'sub': user_id
             }

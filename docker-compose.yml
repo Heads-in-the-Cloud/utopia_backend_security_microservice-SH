@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  users:
+    image: utopia_backend_security_microservice
+    secrets:
+      - utopia_db_uri
+      - utopia_secret_key
+    ports:
+      - "5000:5000"
+
+secrets:
+  utopia_db_uri:
+    file: ../../docker-compose/utopia_db_uri
+  utopia_secret_key:
+    file: ../../docker-compose/utopia_secret_key
