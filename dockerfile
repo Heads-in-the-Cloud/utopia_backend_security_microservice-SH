@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM utopia_backend_base_image
+FROM 026390315914.dkr.ecr.us-west-2.amazonaws.com/utopia_backend_base_image-sh
 
 MAINTAINER Sean Horner "sean.horner@smoothstack.com"
 LABEL project="utopia_airlines"
