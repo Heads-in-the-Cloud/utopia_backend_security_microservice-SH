@@ -10,7 +10,7 @@ pipeline {
 
         org_ecr_uri = "026390315914.dkr.ecr.us-west-2.amazonaws.com"
 
-        repo_name = 'utopia_backend_security_microservice'
+        repo_name = 'utopia_backend_security_microservice-sh'
         scanner_home = tool "${SonarQubeScanner}";
     }
 
