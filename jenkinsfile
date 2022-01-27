@@ -23,17 +23,18 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps{
-                withSonarQubeEnv(installationName: 'SonarQube') {
-                    sh "${scanner_home}/bin/sonar-scanner"
-                }
-            }
-        }
+//         stage('SonarQube Analysis') {
+//             steps{
+//                 withSonarQubeEnv(installationName: 'SonarQube') {
+//                     sh "${scanner_home}/bin/sonar-scanner"
+//                 }
+//             }
+//         }
 
         stage('Build') {
             steps {
                 echo 'Building Docker image...'
+                sh 'docker context use default'
                 sh 'docker build -t ${repo_name} .'
             }
         }
@@ -41,11 +42,9 @@ pipeline {
         stage('Push Images') {
             steps {
                 echo 'Tagging images'
-                sh 'docker tag ${repo_name}:latest ${docker_user}/${repo_name}:latest'
                 sh 'docker tag ${repo_name}:latest ${org_ecr_uri}/${repo_name}:latest'
                 sh 'docker tag ${repo_name}:latest ${org_ecr_uri}/${repo_name}:${commit}'
                 echo 'Pushing images'
-                sh 'docker push ${docker_user}/${repo_name}:latest'
                 sh 'docker push ${org_ecr_uri}/${repo_name}:latest'
                 sh 'docker push ${org_ecr_uri}/${repo_name}:${commit}'
             }
@@ -54,10 +53,9 @@ pipeline {
         stage('Cleanup') {
             steps {
                 echo 'Removing images'
-                sh 'docker images rm -f ${repo_name}:latest'
-                sh 'docker images rm -f ${docker_user}/${repo_name}:latest'
-                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:latest'
-                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:${commit}'
+                sh 'docker rmi ${repo_name}:latest'
+                sh 'docker rmi ${org_ecr_uri}/${repo_name}:latest'
+                sh 'docker rmi ${org_ecr_uri}/${repo_name}:${commit}'
             }
         }
     }
