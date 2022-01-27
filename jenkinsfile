@@ -8,7 +8,7 @@ pipeline {
 
         docker_user = "seanhorner"
 
-        org_ecr_uri = '${ORG_ACCOUNT_NUM}.dkr.ecr.${region}.amazonaws.com'
+        org_ecr_uri = "${ORG_ACCOUNT_NUM}.dkr.ecr.${region}.amazonaws.com"
 
         repo_name = 'utopia_backend_security_microservice'
         scanner_home = tool "${SonarQubeScanner}";
