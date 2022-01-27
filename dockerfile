@@ -14,7 +14,6 @@ COPY                \
     config.py       \
     models.py       \
     networking.py   \
-    resources.py    \
     schemas.py      \
     tests.py        \
 # To working directory

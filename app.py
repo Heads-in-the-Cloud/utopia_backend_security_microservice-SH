@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import os
 from functools import wraps
 
 import jwt
@@ -23,9 +22,6 @@ db.init_app(app)
 from schemas import *
 ma.init_app(app)
 
-# Initializing the routes
-from routes import *
-
 # Initializing the Flask-Migration Handler
 migrate = Migrate(db, app)
 
@@ -40,24 +36,17 @@ def token_required(f):
         elif 'token' in request.args:
             token = request.args.get('token')
         else:
-            return redirect(f'{ADMIN_ADDR}/login')
+            return make_response(jsonify({"status": "fail", "message": "Token verification failed."}), 404)
 
         try:
-            data = jwt.decode(
-                token,
-                app.config['SECRET_KEY'],
-                algorithms="HS256"
-            )
-            current_user = User.query           \
-                .filter_by(email=data['email']) \
-                .first()
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms="HS256")
+            # current_user = User.query.filter_by(email=data['email']).first()
+            # identity = current_user.username
         except Exception as e:
-            response_obj = {
+            return make_response({
                 'status': 'fail',
-                'message': 'Something odd happened, try again.'
-            }
-            print(e)
-            return make_response(jsonify({response_obj})), 403
+                'message': e}
+            ), 403
 
         return f(*args, **kwargs)
     return decorated
@@ -65,10 +54,16 @@ def token_required(f):
 
 @app.route('/')
 def index():
-    if not 'x-access-token' in request.headers or not 'token' in request.args:
+    if 'x-access-token' not in request.headers or 'token' not in request.args:
         return redirect(f'{ADMIN_ADDR}/login')
     else:
-        return 'Security microservice is up and running.'
+        return '<h3>Security microservice is up and running</h3>.'
+
+
+@app.route('/protected')
+@token_required
+def protected():
+    return '<p>This is protected content, only users with valid tokens can make it here.</p>'
 
 
 @app.route('/reauth')
@@ -81,7 +76,7 @@ def reauthorization():
     # Pull the data from the previous token
     data = jwt.decode(token, app.config['SECRET_KEY'], algorithms="HS256")
     # Change the expiration time to 8 min from "now" (leave username and initial creation time to pass through)
-    data['exp'] = datetime.utcnow() + timedelta(minutes=8)
+    data['exp'] = datetime.datetime.utcnow() + timedelta(minutes=15)
     # Create a new token for the user
     token = jwt.encode(data, app.config['SECRET_KEY'], algorithm="HS256")
     # Pass that new token back to the user to use, so their browsing isn't interrupted
@@ -112,17 +107,34 @@ def login():
 
     if check_password_hash(user.password, auth.get('password')):
         # If the user exists in the registry and the password matches the hash in the registry, give them a token
-        token = jwt.encode({
+        token_data = {
             'user_id': user.id,
-            'exp': datetime.utcnow() + timedelta(minutes=8),
-            'iat': datetime.utcnow()},
-            app.config['SECRET_KEY'],
-            algorithm="HS256")
+            'user_role': user.role_id,
+            'exp': datetime.datetime.utcnow() + timedelta(minutes=30),
+            'iat': datetime.datetime.utcnow()
+        }
 
-        return make_response(jsonify({'token': token}), 201)
+        token = jwt.encode(
+            token_data,
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+
+        refresh_token_data = {
+            'user_id': user.id,
+            'exp': datetime.datetime.utcnow() + timedelta(days=2)
+        }
+
+        refresh_token = jwt.encode(
+            refresh_token_data,
+            app.config['SECRET_KEY'],
+            algorithm="HS256"
+        )
+
+        return make_response(jsonify({'token': token, 'refresh_token': refresh_token}), 201)
 
     return make_response(
-        'Wrong password!',
+        'Incorrect password',
         403,
         {'WWW-Authenticate': 'Basic Realm="Login Required"'}
     )

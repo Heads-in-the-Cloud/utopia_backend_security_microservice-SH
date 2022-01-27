@@ -1,57 +1,64 @@
 #!groovy
-// Security API Microservice Pipeline
+// Flights API Microservice Pipeline
 pipeline {
     agent any
 
     environment {
-
         commit = sh(returnStdout: true, script: "git rev-parse --short=8 HEAD").trim()
-        aws_region = 'us-west-2'
-        aws_ecr_repo = '026390315914'
-        repo_name = 'utopia_backend_security_microservice-sh'
 
+        docker_user = "seanhorner"
+
+        org_ecr_uri = '${ORG_ACCOUNT_NUM}.dkr.ecr.${region}.amazonaws.com'
+
+        repo_name = 'utopia_backend_security_microservice'
+        scanner_home = tool "${SonarQubeScanner}";
     }
 
     stages {
 
-        stage('AWS Login') {
+        stage('aws_login') {
             steps {
-                echo 'logging in via AWS cli...'
-                sh 'aws ecr get-login-password --region ${aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repo}.dkr.ecr.${aws_region}.amazonaws.com'
+                echo 'Getting AWS credentials to push to Org ECR...'
+                sh 'aws ecr get-login-password --region ${aws_region} | docker login --username AWS --password-stdin ${org_ecr_uri}'
             }
         }
 
-        stage('Build Docker') {
+        stage('SonarQube Analysis') {
+            steps{
+                withSonarQubeEnv(installationName: 'SonarQube') {
+                    sh "${scanner_home}/bin/sonar-scanner"
+                }
+            }
+        }
+
+        stage('Build') {
             steps {
                 echo 'Building Docker image...'
                 sh 'docker build -t ${repo_name} .'
             }
         }
 
-        stage('Tag Images') {
-            steps {
-                echo 'Tagging images...'
-                sh 'docker tag ${repo_name}:latest ${aws_ecr_repo}.dkr.ecr.${aws_region}.amazonaws.com/${repo_name}:latest'
-                sh 'docker tag ${repo_name}:latest ${aws_ecr_repo}.dkr.ecr.${aws_region}.amazonaws.com/${repo_name}:${commit}'
-            }
-        }
-
         stage('Push Images') {
             steps {
-                echo 'Pushing images...'
-                sh 'docker push ${aws_ecr_repo}.dkr.ecr.${aws_region}.amazonaws.com/${repo_name}:latest'
-                sh 'docker push ${aws_ecr_repo}.dkr.ecr.${aws_region}.amazonaws.com/${repo_name}:${commit}'
+                echo 'Tagging images'
+                sh 'docker tag ${repo_name}:latest ${docker_user}/${repo_name}:latest'
+                sh 'docker tag ${repo_name}:latest ${org_ecr_uri}/${repo_name}:latest'
+                sh 'docker tag ${repo_name}:latest ${org_ecr_uri}/${repo_name}:${commit}'
+                echo 'Pushing images'
+                sh 'docker push ${docker_user}/${repo_name}:latest'
+                sh 'docker push ${org_ecr_uri}/${repo_name}:latest'
+                sh 'docker push ${org_ecr_uri}/${repo_name}:${commit}'
             }
         }
 
         stage('Cleanup') {
             steps {
                 echo 'Removing images'
-                sh 'docker rmi ${repo_name}:latest'
-                sh 'docker rmi ${aws_ecr_repo}.dkr.ecr.us-west-2.amazonaws.com/${repo_name}:latest'
-                sh 'docker rmi ${aws_ecr_repo}.dkr.ecr.us-west-2.amazonaws.com/${repo_name}:${commit}'
+                sh 'docker images rm -f ${repo_name}:latest'
+                sh 'docker images rm -f ${docker_user}/${repo_name}:latest'
+                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:latest'
+                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:${commit}'
             }
         }
-
     }
 }
