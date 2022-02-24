@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM utopia_backend_base_image
+FROM seanhorner/utopia_backend_base_image
 
-MAINTAINER Sean Horner "sean.horner@smoothstack.com"
+LABEL maintainer="sean.horner@smoothstack.com"
 LABEL project="utopia_airlines"
 
 # Changing working directory to the system user's home repository
